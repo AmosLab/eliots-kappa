@@ -1,0 +1,16 @@
+Package: eliotskappa
+Title: Inter-rater Reliability Kappa Score for Non-Aligned Time Windows
+Version: 0.0.0.9000
+Authors@R: 
+    person("Eliot", "Bethke", , "bethke2@illinois.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-3998-5199"))
+Description: Kappa statistics for multiple rater coding where the unit of analysis is not pre-defined and codes can overlap. Each rater is considered as a reference, and every other rater is compared against the reference for agreement. Options are included to weight raters or rate weight types of agreement.
+License: `use_gpl3_license()` 
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+  lubridate (>= 1.9.3),
+  zoo (>= 1.8-12),
+  stringr (>=1.5.1),
+  irr (>= 0.84.1)
