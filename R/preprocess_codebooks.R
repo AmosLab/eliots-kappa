@@ -10,9 +10,9 @@ codecount <- 1
 replacements <- list(c("anatomy landmark", "anatomy"), c("[-–—]", ""), c("intrigue", "excitement"), c("disappointment", "frustration"), c("investigating", "anatomy"))
 
 
-preprocess_case <- function(caseDirPath, startCol=1, endCol=2, codeCol=4){
+preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
-  case <- load_from_dir(caseDirPath)
+  case <- load_from_dir(caseDirPath, pat=pat, header=header, delimiter=delimiter, quoteChar=quoteChar, colTypes=colTypes, parseDates=parseDates, dateFmt=dateFmt)
 
   # When we load the codebooks, we add a column at the beginning for the filename.
   codeloc <- colnames(case)[codeCol+1]
