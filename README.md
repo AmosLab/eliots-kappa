@@ -1,10 +1,11 @@
 # Preprocessing for a Modified Kappa Calculation
 Functions are provided for loading csv files containing start and stop times, codes, and descriptions/notes.
-Each case should be contained in its own directory, with each rater's codes in a separate csv file:
-\[Case Folder\]
-  |__>  \(case_rater1.csv\)
-  |__>  \(case_rater2.csv\)
-  |__> ...
+Each case should be contained in its own directory, with each rater's codes in a separate csv file like so:
+<br>
+\[Case Folder\] <br>
+&emsp;  |\_\_>  \(case_rater1.csv\) <br>
+&emsp;  |\_\_>  \(case_rater2.csv\) <br>
+&emsp;  |\_\_> ... <br>
 
 In ```preprocess_codebooks.R```, load a case with the ```preprocess_case()``` function. This function takes in the following parameters:
 
