@@ -47,7 +47,7 @@ Next, run the function ```all_kappa()``` to calculate the kappa scores for the c
 * ```intCol```       - string representing the column name in each rater's data frame containing the parsed ```lubridate::interval``` objects. In ```preprocess_case()```, this column will be named 'interval'. DEFAULT: "interval"
 
 This funtion will loop over the list of data frames in ```codebooks```, and each rater will then be used as a reference against which each code of theirs is checked for agreement with every other rater.
-In a future release, extra parameters will be added to give finer-grained control over what constitutes agreement. For now, each code interval in the reference rater's codes has ```windowSec``` subtracted from the start and adde to the end times, widening the interval by ```2 * windowSec```. 
+In a future release, extra parameters will be added to give finer-grained control over what constitutes agreement. For now, each code interval in the reference rater's codes has ```windowSec``` subtracted from the start and added to the end times, widening the interval by ```2 * windowSec```. 
 Then, each other rater's codebook is checked for any codes which overlap that interval, endpoint inclusive. For example, "00\:05\:15" - "00\:06\:10" WOULD overlap with "00\:06\:10" - "00\:07\:40". 
 If the same code is found overlapping the reference rater's code, agreement is recorded. If only different code(s) are found for the reference rater's code interval, the first or most common code identified in that interval is recorded as disagreement. If no other codes were identified during the referenec rater's code interval, a '0' is recorded as a NULL code to indicate disagreement.
 
