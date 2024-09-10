@@ -37,7 +37,7 @@ Each rater's codes are then separated according to the file name, so each rater'
 
 This function returns a list of data frames, where each data frame is a different rater's codes.
 
-Next, run the funtion ```all_kappa()``` to calculate the kappa scores for the case. This function takes the following parameters:
+Next, run the function ```all_kappa()``` to calculate the kappa scores for the case. This function takes the following parameters:
 
 * ```codebooks```    - a list of data frames pre-processed as above
 * ```windowSec```    - integer representing a window on either side of each code to allow for agreement when raters are slightly misaligned. DEFAULT: 10
