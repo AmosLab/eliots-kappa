@@ -9,7 +9,7 @@ Each case should be contained in its own directory, with each rater's codes in a
 
 In ```preprocess_codebooks.R```, load a case with the ```preprocess_case()``` function. This function takes in the following parameters:
 
-* ```caseDirPath```   - string representing a valid file path to a folder containing each rater's coding files. DEFAULT: "`header```."
+* ```caseDirPath```   - string representing a valid file path to a folder containing each rater's coding files. DEFAULT: "."
 * ```startCol```      - integer representing the column in each rater's coding file containing the code start times. DEFAULT: 1
 * ```endCol```        - integer representing the column in each rater's coding file containing the code end times. DEFAULT: 2
 * ```codeCol```       - integer representing the column in each rater's coding file containing the code labels, parsed as strings. DEFAULT: 4
