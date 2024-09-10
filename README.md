@@ -40,7 +40,7 @@ This function returns a list of data frames, where each data frame is a differen
 Next, run the function ```all_kappa()``` to calculate the kappa scores for the case. This function takes the following parameters:
 
 * ```codebooks```    - a list of data frames pre-processed as above
-* ```windowSec```    - integer representing a window on either side of each code to allow for agreement when raters are slightly misaligned. DEFAULT: 10
+* ```windowSec```    - integer representing a window (in seconds) on either side of each code to allow for agreement when raters are slightly misaligned. DEFAULT: 10
 * ```startCol```     - integer representing the column in each rater's data frame containing the parsed start times for codes. During ```preprocess_case()```, the first column is added as the rater's file name (string). DEFAULT: 2
 * ```endCol```       - integer representing the column in each rater's data frame containing the parsed end times for codes. Will be offset by one column for the same reason as ```startCol```. DEFAULT: 3
 * ```codeCol```      - string representing the column name in each rater's data frame containing the parsed codes as integers. In ```preprocess_case()```, this column will be named 'codeId'. DEFAULT: "codeId"
