@@ -16,7 +16,7 @@ In ```preprocess_codebooks.R```, load a case with the ```preprocess_case()``` fu
 * ```pat```           - a valid regex string containing the search pattern for valid rater's files. DEFAULT: "*.csv$"
 * ```header```        - boolean, whether or not each rater's coding file contains a header (labels) in the first row. DEFAULT: FALSE
 * ```delimiter```     - a string with the delimiter used to separate columns in each rater's coding file. DEFAULT: ","
-* ```quoteChar```     - a string with the character(s) to be used to identify quotes. When parsing, text between the quote characters will not by parsed directly. DEFAULT: "\"" (a doube quote)
+* ```quoteChar```     - a string with the character(s) to be used to identify quotes. When parsing, text between the quote characters will not by parsed directly. DEFAULT: "\\"" (a doube quote)
 * ```colTypes```      - a vector of string types to infer each column from each rater's coding file as it's read in. DEFAULT: c("numeric", "numeric", "character", "character")
 * ```parseDates```    - a logical vector where each value indicates whether to parse that column in the rater's coding file as a datetime object. DEFAULT: c(TRUE, TRUE, FALSE, FALSE)
 * ```dateFmt```       - a string corresponding to a ```lubridate``` parser. DEFAULT: "ms" Options include:
