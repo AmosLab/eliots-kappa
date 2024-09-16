@@ -2,13 +2,16 @@
 ## These hold data across multiple/all cases loaded
 
 # This hash acts like a lookup to convert codes to unique numerical ID
+# TODO Move this object to csv or other user-editable file
 code2num <- hash::hash()
 
 code2num_fixed <- hash::hash(keys=c("orienting", "3d manipulation", "tool usage", "feature", "reviewing", "excitement", "frustration", "confidence", "mental model", "planning", "path finding", "confirmation", "team dynamics", "risk", "limitation", "uncertainty", "anatomy"), values=c(1,4,5,2,3,7,8,9,10,11,12,13,14,15,16,17,6))
 # track the number of unique codes we've encountered
 codecount <- 1
+
 # string replacements to be made for code densification.
 # List of vector pairs of strings, where the first string will be replaced with the second.
+# TODO Move this object to csv or other user-editable file
 replacements <- list(c("anatomy landmark", "anatomy"), c("[-–—]", ""), c("intrigue", "excitement"), c("disappointment", "frustration"), c("investigating", "anatomy"), c("examining", "anatomy"))
 
 
@@ -72,8 +75,8 @@ preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pa
   codebooks <- split(case, case$fname)
 
   return(codebooks)
-
 }
+
 
 stat_mode <- function(data){
   # previously tried this with a hash, but hash::hash does not preserve insert
@@ -105,6 +108,7 @@ stat_mode <- function(data){
     return(as.integer(names(counter[counter==max(counter)])[1]))
   }
 }
+
 
 get_overlap <- function(codebook, code, codeCol, interval, intCol, window){
   lubridate::int_start(interval) <- lubridate::int_start(interval) - window
