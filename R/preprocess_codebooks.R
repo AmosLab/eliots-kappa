@@ -3,18 +3,20 @@
 
 # This hash acts like a lookup to convert codes to unique numerical ID
 code2num <- hash::hash()
+
+code2num_fixed <- hash::hash(keys=c("orienting", "3d manipulation", "tool usage", "feature", "reviewing", "excitement", "frustration", "confidence", "mental model", "planning", "path finding", "confirmation", "team dynamics", "risk", "limitation", "uncertainty", "anatomy"), values=c(1,4,5,2,3,7,8,9,10,11,12,13,14,15,16,17,6))
 # track the number of unique codes we've encountered
 codecount <- 1
 # string replacements to be made for code densification.
 # List of vector pairs of strings, where the first string will be replaced with the second.
-replacements <- list(c("anatomy landmark", "anatomy"), c("[-–—]", ""), c("intrigue", "excitement"), c("disappointment", "frustration"), c("investigating", "anatomy"))
+replacements <- list(c("anatomy landmark", "anatomy"), c("[-–—]", ""), c("intrigue", "excitement"), c("disappointment", "frustration"), c("investigating", "anatomy"), c("examining", "anatomy"))
 
 
 preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
   case <- load_from_dir(caseDirPath, pat=pat, header=header, delimiter=delimiter, quoteChar=quoteChar, colTypes=colTypes, parseDates=parseDates, dateFmt=dateFmt)
 
-  # When we load the codebooks, we add a column at the beginning for the filename.
+  # In load_from_dir we added a column at the beginning for the filename.
   codeloc <- colnames(case)[codeCol+1]
   startloc <- colnames(case)[startCol+1]
   endloc <- colnames(case)[endCol+1]
@@ -43,18 +45,65 @@ preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pa
   intv <- rep(lubridate::interval("1970-01-01 00:00:00", "1970-01-01 00:00:00"), nrow(case))
   # TODO Catch and fix case where time is only in seconds!!
   for (row in 1:nrow(case)){
+    if(case[row,endloc] < case[row,startloc]){
+      splits <- split(case, case$fname)
+      lens = vector("numeric", length(splits))
+      index <- 1
+      for (book in splits){
+        lens[index] <- nrow(book)
+        index <- index + 1
+      }
+      clens <- cumsum(lens)
+      bookrow <- tail(clens[clens<=row], 1)
+      print(lens)
+      print(row)
+      print(bookrow)
+
+      stop(paste("Time range undefined; start ", as.character(case[row,startloc]), " comes after end ", as.character(case[row,endloc]), " in user ", case[row,1], " at row ", as.character(row-bookrow),  sep=""))
+    }
     intv[row] <- lubridate::interval(start=case[row,startloc], end=case[row,endloc], tz='UTC')
   }
   case[['interval']] <- intv
 
   # convert code strings to code numbers
-  case[['codeId']] <- lapply(case[[codeloc]], function (x) hash::values(code2num[tolower(trimws(x))]))
+  case[['codeId']] <- lapply(case[[codeloc]], function (x) hash::values(code2num_fixed[tolower(trimws(x))]))
 
   # split out cases by user/filename
   codebooks <- split(case, case$fname)
 
   return(codebooks)
 
+}
+
+stat_mode <- function(data){
+  # previously tried this with a hash, but hash::hash does not preserve insert
+  # order and sorts by value, which differs from python's mode()
+  # initialize named vector
+  counter <- c("NA"=0)
+  for(each in data){
+    # names for named vector should be char
+    nextkey <- as.character(each)
+    # indexing named vector with char not in names will return NA
+    if( !is.na(counter[nextkey]) ){
+      counter[nextkey] <- counter[nextkey] + 1
+    } else {
+      # This is not efficient, but we expect to be dealing with small
+      # numbers of codes, so it will work fine.
+      counter <- c(counter, setNames(1,nextkey))
+    }
+  }
+
+  # remove the NA element. Not strictly needed, but may help with debugging.
+  counter <- counter[counter!=0]
+
+  # in Python, mode() returns the first element seen if all are equally present.
+  if (max(counter) == min(counter)){
+    return(as.integer(names(counter[1])))
+  }
+  # if still multiple ties for most seen in window, return the lowest code.
+  else{
+    return(as.integer(names(counter[counter==max(counter)])[1]))
+  }
 }
 
 get_overlap <- function(codebook, code, codeCol, interval, intCol, window){
@@ -72,7 +121,13 @@ get_overlap <- function(codebook, code, codeCol, interval, intCol, window){
     return(code)
   # if there are overlaps but none of them match the code, grab the most common code found in the window or the first found
   } else {
-    return(as.numeric(sort(table(unlist(codebook[overlaps, codeCol])),decreasing=TRUE)[1]))
+    # WARNING: This will return the mode, but for the occasions where there is
+    # no single mode, it returns the minumum instead of the first by index.
+    # This caused conflicts with other mode() functions which return the
+    # first element in case of equally present values.
+    # return(as.numeric(sort(table(unlist(codebook[overlaps, codeCol])),decreasing=TRUE)[1]))
+    othercodes <- codebook[overlaps, codeCol]
+    return(stat_mode(sort(unlist(othercodes))))
   }
 
 }
@@ -109,7 +164,8 @@ single_kappa <- function(codebooks, reference=1, windowSec=10, startCol=2, endCo
       # code = code match in ref code interval +/- window
       # other number = most prevalent code found in ref code interval +/- window if no code match.
       match <- get_overlap(book, code, codeCol, interval, intCol, window)
-      results[row] = match
+
+      results[row] <- match
     }
 
     # remove any remaining null from vector
