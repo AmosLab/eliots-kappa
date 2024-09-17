@@ -2,20 +2,54 @@
 ## These hold data across multiple/all cases loaded
 
 # This hash acts like a lookup to convert codes to unique numerical ID
-# TODO Move this object to csv or other user-editable file
 code2num <- hash::hash()
 
-code2num_fixed <- hash::hash(keys=c("orienting", "3d manipulation", "tool usage", "feature", "reviewing", "excitement", "frustration", "confidence", "mental model", "planning", "path finding", "confirmation", "team dynamics", "risk", "limitation", "uncertainty", "anatomy"), values=c(1,4,5,2,3,7,8,9,10,11,12,13,14,15,16,17,6))
-# track the number of unique codes we've encountered
-codecount <- 1
+# code2num_fixed <- hash::hash(keys=c("orienting", "3d manipulation",
+#                                     "tool usage", "feature",
+#                                     "reviewing", "excitement",
+#                                     "frustration", "confidence",
+#                                     "mental model", "planning",
+#                                     "path finding", "confirmation",
+#                                     "team dynamics", "risk",
+#                                     "limitation", "uncertainty",
+#                                     "anatomy"),
+#                              values=c(1,4,5,2,3,7,8,9,10,11,12,13,14,15,16,17,6))
+
+# # track the number of unique codes we've encountered
+# codecount <- 1
 
 # string replacements to be made for code densification.
 # List of vector pairs of strings, where the first string will be replaced with the second.
-# TODO Move this object to csv or other user-editable file
-replacements <- list(c("anatomy landmark", "anatomy"), c("[-–—]", ""), c("intrigue", "excitement"), c("disappointment", "frustration"), c("investigating", "anatomy"), c("examining", "anatomy"))
+replacements <- list("load")
+# replacements <- list(c("anatomy landmark", "anatomy"),
+#                      c("[-–—]", ""),
+#                      c("intrigue", "excitement"),
+#                      c("disappointment", "frustration"),
+#                      c("investigating", "anatomy"),
+#                      c("examining", "anatomy"))
+
+load_codekeys <- function(path=".", delimiter=",", quoteChar="\"", header=FALSE){
+  codekeys <- read.csv(path, header=header, sep=delimiter, quote=quoteChar)
+  code2num <- hash::hash()
+  for(row in 1:nrow(codekeys)){
+    code2num[[codekeys[row,1]]] <- codekeys[row,2]
+  }
+  return(code2num)
+}
 
 
-preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
+load_replacements <- function(path=".", delimiter=",", quoteChar="\"", header=FALSE){
+  to_replace <- read.csv(path, header=header, sep=delimiter, quote=quoteChar)
+  replacements <- vector("list", nrow(to_replace))
+  for(row in 1:nrow(to_replace)){
+    replacements[[row]] <- c(to_replace[row,1], to_replace[row,2])
+  }
+  return(replacements)
+}
+
+
+
+preprocess_case <- function(caseDirPath=".", relReplacementDirPath="/../replacements.csv", relCodekeyDirPath="/../codekeys.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
   case <- load_from_dir(caseDirPath, pat=pat, header=header, delimiter=delimiter, quoteChar=quoteChar, colTypes=colTypes, parseDates=parseDates, dateFmt=dateFmt)
 
@@ -26,6 +60,15 @@ preprocess_case <- function(caseDirPath=".", startCol=1, endCol=2, codeCol=4, pa
 
   # Lowercase codestr, trim leading and trailing white space
   case[[codeloc]] <- tolower(trimws(case[[codeloc]]))
+
+  if (length(code2num) < 1){
+    code2num <- load_codekeys(paste(caseDirPath, relCodekeyDirPath, sep=""))
+  }
+
+  if (length(replacements[[1]]) < 2){
+    replacements <- load_replacements(paste(caseDirPath, relReplacementDirPath, sep=""))
+  }
+
 
   # make substitutions if required
   if (length(replacements) > 0) {
