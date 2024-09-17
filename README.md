@@ -2,9 +2,9 @@
 Functions are provided for loading csv files containing start and stop times, codes, and descriptions/notes.
 Each case should be contained in its own directory, with each rater's codes in a separate csv file like so:
 <br>
-\[Case Folder\] <br>
-&emsp;  |\_\_>  \(case_rater1.csv\) <br>
-&emsp;  |\_\_>  \(case_rater2.csv\) <br>
+\[Case1 Folder\] <br>
+&emsp;  |\_\_>  \(case1_rater1.csv\) <br>
+&emsp;  |\_\_>  \(case1_rater2.csv\) <br>
 &emsp;  |\_\_> ... <br>
 
 In ```preprocess_codebooks.R```, load a case with the ```preprocess_case()``` function. This function takes in the following parameters:
@@ -37,7 +37,19 @@ With these parameters, you should be able to adapt this function call to meet yo
 Note that the ```relReplacementPath``` and ```relCodekeyPath``` are relative to the ```caseDirPath```, and will be appended to the 
 that file path. The ```replacements.csv``` file with column 1 containing search strings and column 2 containing replace strings, 
 and ```codekeys.csv``` file with column 1 containing strings of codes used in the case.csv files and column 2 containing a unique number for each code
-should be saved in the \[Case Folder\] along with each case subdirectory. 
+should be saved in the same folder which contains the \[Case1 Folder\], like so:
+<br>
+\[Case1 Folder\] <br>
+&emsp;  |\_\_>  \(case1_rater1.csv\) <br>
+&emsp;  |\_\_>  \(case1_rater2.csv\) <br>
+&emsp;  |\_\_> ... <br>
+\[Case2 Folder\] <br>
+&emsp;  |\_\_>  \(case2_rater1.csv\) <br>
+&emsp;  |\_\_>  \(case2_rater2.csv\) <br>
+&emsp;  |\_\_> ... <br>
+... <br>
+replacements.csv <br>
+codekeys.csv <br>
 
 This function will read in each rater's codes, clean up codes by stripping trailing and leading spaces then casting to lowercase, making regex substitutions from a global var called ```replacements```, 
 creates a column with time interval objects for each code, and creates a hash map of each code string to a unique integer starting from 1 and counting up. 
