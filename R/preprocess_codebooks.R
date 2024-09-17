@@ -2,6 +2,7 @@
 ## These hold data across multiple/all cases loaded
 
 # This hash acts like a lookup to convert codes to unique numerical ID
+# Initialize empty as global, or user can hardcode values like example below.
 code2num <- hash::hash()
 
 # code2num_fixed <- hash::hash(keys=c("orienting", "3d manipulation",
@@ -15,12 +16,13 @@ code2num <- hash::hash()
 #                                     "anatomy"),
 #                              values=c(1,4,5,2,3,7,8,9,10,11,12,13,14,15,16,17,6))
 
-# # track the number of unique codes we've encountered
-# codecount <- 1
 
 # string replacements to be made for code densification.
 # List of vector pairs of strings, where the first string will be replaced with the second.
+# If left like this, code will detect the wrong size (should be 2*n)
+# and load the list from file. User can hardcode as well, as in example below.
 replacements <- list("load")
+
 # replacements <- list(c("anatomy landmark", "anatomy"),
 #                      c("[-–—]", ""),
 #                      c("intrigue", "excitement"),
@@ -28,16 +30,20 @@ replacements <- list("load")
 #                      c("investigating", "anatomy"),
 #                      c("examining", "anatomy"))
 
+
+# Reads in a csv with codes (column 1) mapped to unique integers (column 2).
+# Loads data.frame to hash.
 load_codekeys <- function(path=".", delimiter=",", quoteChar="\"", header=FALSE){
   codekeys <- read.csv(path, header=header, sep=delimiter, quote=quoteChar)
   code2num <- hash::hash()
   for(row in 1:nrow(codekeys)){
-    code2num[[codekeys[row,1]]] <- codekeys[row,2]
+    code2num[[as.character(codekeys[row,1])]] <- as.integer(codekeys[row,2])
   }
   return(code2num)
 }
 
-
+# Reads in a csv with column 1 = search term, column 2 = replace term.
+# Coverts data.frame to list of vectors for simplicity later.
 load_replacements <- function(path=".", delimiter=",", quoteChar="\"", header=FALSE){
   to_replace <- read.csv(path, header=header, sep=delimiter, quote=quoteChar)
   replacements <- vector("list", nrow(to_replace))
@@ -61,29 +67,41 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   # Lowercase codestr, trim leading and trailing white space
   case[[codeloc]] <- tolower(trimws(case[[codeloc]]))
 
+  # We need a user defined mapping of codes to numbers. If not hardcoded,
+  # load it from file
   if (length(code2num) < 1){
-    code2num <- load_codekeys(paste(caseDirPath, relCodekeyDirPath, sep=""))
+    tryCatch({code2num <- load_codekeys(paste(caseDirPath, relCodekeyPath, sep=""))},
+             error = function(cond) {
+                warning("Failed to load codekeys.csv.
+                        Defaulting to building map from single case.
+                        THIS MEANS EACH CASE MAY HAVE DIFFERENT VALUES FOR THE SAME CODE!")
+
+               codecount <- 1
+                # if failed to load from file, build map from single case
+                for (el in unique(case[[codeloc]])){
+                  code2num[[el]] <- codecount
+                  codecount <- length(code2num) + 1
+                }
+              })
   }
 
-  if (length(replacements[[1]]) < 2){
-    replacements <- load_replacements(paste(caseDirPath, relReplacementDirPath, sep=""))
+  # If the user wants to clean up codes/condense codes. If not hardcoded,
+  # load it from file. Should always be even length (search,replace), or len = 0
+  if (length(replacements[[1]]) == 1){
+    try(replacements <- load_replacements(paste(caseDirPath, relReplacementPath, sep="")),
+        silent=TRUE)
   }
 
 
   # make substitutions if required
-  if (length(replacements) > 0) {
+  if (length(replacements[[1]]) > 1) {
     for (each in replacements){
       case[[codeloc]] <- stringr::str_replace(case[[codeloc]], each[1], each[2])
     }
   }
 
-  # build dict to map codes to integer keys
-  for (el in unique(case[[codeloc]])){
-    code2num[[el]] <- codecount
-    codecount <- length(code2num) + 1
-  }
-
   # calculate timedeltas for stop-start+1
+  # used to use these for statistics on avg code duration. Depricated.
   # case['delta'] <- lapply(case[endloc]-case[startloc], function(k) seconds_to_period(period_to_seconds(k)) + lubridate::seconds(1))
 
   # convert start and stop to lubridate interval for overlap checking
@@ -101,10 +119,6 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
       }
       clens <- cumsum(lens)
       bookrow <- tail(clens[clens<=row], 1)
-      print(lens)
-      print(row)
-      print(bookrow)
-
       stop(paste("Time range undefined; start ", as.character(case[row,startloc]), " comes after end ", as.character(case[row,endloc]), " in user ", case[row,1], " at row ", as.character(row-bookrow),  sep=""))
     }
     intv[row] <- lubridate::interval(start=case[row,startloc], end=case[row,endloc], tz='UTC')
@@ -220,7 +234,7 @@ single_kappa <- function(codebooks, reference=1, windowSec=10, startCol=2, endCo
     # add this codebook to the rest of the results and increment counter
     all_results <- cbind(all_results, unlist(results))
   }
-  print(all_results)
+
   kappa <- irr::kappam.fleiss(all_results)
   return(kappa$value)
 
