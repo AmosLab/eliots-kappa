@@ -47,7 +47,7 @@ should be saved in the same folder which contains the \[Case1 Folder\], like so:
 &emsp;  |\_\_>  \(case2_rater1.csv\) <br>
 &emsp;  |\_\_>  \(case2_rater2.csv\) <br>
 &emsp;  |\_\_> ... <br>
-...<br>
+... <br>
 replacements.csv <br>
 codekeys.csv <br>
 

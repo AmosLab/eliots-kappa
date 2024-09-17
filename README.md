@@ -39,17 +39,17 @@ that file path. The ```replacements.csv``` file with column 1 containing search 
 and ```codekeys.csv``` file with column 1 containing strings of codes used in the case.csv files and column 2 containing a unique number for each code
 should be saved in the same folder which contains the \[Case1 Folder\], like so:
 <br>
-\[Case1 Folder\] <br>
-&emsp;  |\_\_>  \(case1_rater1.csv\) <br>
-&emsp;  |\_\_>  \(case1_rater2.csv\) <br>
-&emsp;  |\_\_> ... <br>
-\[Case2 Folder\] <br>
-&emsp;  |\_\_>  \(case2_rater1.csv\) <br>
-&emsp;  |\_\_>  \(case2_rater2.csv\) <br>
-&emsp;  |\_\_> ... <br>
-... <br>
-replacements.csv <br>
-codekeys.csv <br>
+**\[Case1 Folder\] <br>
+**&emsp;  |\_\_>  \(case1_rater1.csv\) <br>
+**&emsp;  |\_\_>  \(case1_rater2.csv\) <br>
+**&emsp;  |\_\_> ... <br>
+**\[Case2 Folder\] <br>
+**&emsp;  |\_\_>  \(case2_rater1.csv\) <br>
+**&emsp;  |\_\_>  \(case2_rater2.csv\) <br>
+**&emsp;  |\_\_> ... <br>
+**... <br>
+**replacements.csv <br>
+**codekeys.csv <br>
 
 This function will read in each rater's codes, clean up codes by stripping trailing and leading spaces then casting to lowercase, making regex substitutions from a global var called ```replacements```, 
 creates a column with time interval objects for each code, and creates a hash map of each code string to a unique integer starting from 1 and counting up. 
