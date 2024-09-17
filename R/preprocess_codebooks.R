@@ -49,7 +49,7 @@ load_replacements <- function(path=".", delimiter=",", quoteChar="\"", header=FA
 
 
 
-preprocess_case <- function(caseDirPath=".", relReplacementDirPath="/../replacements.csv", relCodekeyDirPath="/../codekeys.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
+preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacements.csv", relCodekeyPath="/../codekeys.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
   case <- load_from_dir(caseDirPath, pat=pat, header=header, delimiter=delimiter, quoteChar=quoteChar, colTypes=colTypes, parseDates=parseDates, dateFmt=dateFmt)
 

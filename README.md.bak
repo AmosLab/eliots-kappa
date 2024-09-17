@@ -34,11 +34,7 @@ In ```preprocess_codebooks.R```, load a case with the ```preprocess_case()``` fu
 
 With these parameters, you should be able to adapt this function call to meet your coding format.
 
-Note that the ```relReplacementPath``` and ```relCodekeyPath``` are relative to the ```caseDirPath```, and will be appended to the 
-that file path. The ```replacements.csv``` file with column 1 containing search strings and column 2 containing replace strings, 
-and ```codekeys.csv``` file with column 1 containing strings of codes used in the case.csv files and column 2 containing a unique number for each code
-should be saved in the \[Case Folder\] along with each case subdirectory. 
-
+Note that the 
 This function will read in each rater's codes, clean up codes by stripping trailing and leading spaces then casting to lowercase, making regex substitutions from a global var called ```replacements```, 
 creates a column with time interval objects for each code, and creates a hash map of each code string to a unique integer starting from 1 and counting up. 
 Each rater's codes are then separated according to the file name, so each rater's coding file should have a unique name within each case.
