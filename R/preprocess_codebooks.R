@@ -126,7 +126,7 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   case[['interval']] <- intv
 
   # convert code strings to code numbers
-  case[['codeId']] <- lapply(case[[codeloc]], function (x) hash::values(code2num_fixed[tolower(trimws(x))]))
+  case[['codeId']] <- lapply(case[[codeloc]], function (x) hash::values(code2num[tolower(trimws(x))]))
 
   # split out cases by user/filename
   codebooks <- split(case, case$fname)
