@@ -7,6 +7,10 @@
 ##' Also accepts arguments to be passed to [load_from_file].
 load_from_dir <- function(dirpath=".", pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms") {
 
+  if(!dir.exists(dirpath)) {
+      stop(paste("Could not find directory: ", dirpath, sep=""))
+  }
+
   files <- list.files(dirpath, pattern=pat)
   if(length(files) < 1){
     stop(paste("Could not find file(s) at location: ", dirpath, sep=""))
