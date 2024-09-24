@@ -57,7 +57,14 @@ load_replacements <- function(path=".", delimiter=",", quoteChar="\"", header=FA
 
 preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacements.csv", relCodekeyPath="/../codekeys.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
-  case <- load_from_dir(caseDirPath, pat=pat, header=header, delimiter=delimiter, quoteChar=quoteChar, colTypes=colTypes, parseDates=parseDates, dateFmt=dateFmt)
+  case <- load_from_dir(caseDirPath,
+                        pat=pat,
+                        header=header,
+                        delimiter=delimiter,
+                        quoteChar=quoteChar,
+                        colTypes=colTypes,
+                        parseDates=parseDates,
+                        dateFmt=dateFmt)
 
   # In load_from_dir we added a column at the beginning for the filename.
   codeloc <- colnames(case)[codeCol+1]
@@ -88,7 +95,8 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   # If the user wants to clean up codes/condense codes. If not hardcoded,
   # load it from file. Should always be even length (search,replace), or len = 0
   if (length(replacements[[1]]) == 1){
-    try(replacements <- load_replacements(paste(caseDirPath, relReplacementPath, sep="")),
+    try(replacements <- load_replacements(paste(caseDirPath,
+                                                relReplacementPath, sep="")),
         silent=TRUE)
   }
 
@@ -106,10 +114,13 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
 
   # convert start and stop to lubridate interval for overlap checking
   # initialize interval vector to avoid casting interval to numeric (seconds)
-  intv <- rep(lubridate::interval("1970-01-01 00:00:00", "1970-01-01 00:00:00"), nrow(case))
+  intv <- rep(lubridate::interval("1970-01-01 00:00:00",
+                                  "1970-01-01 00:00:00"), nrow(case))
   # TODO Catch and fix case where time is only in seconds!!
   for (row in 1:nrow(case)){
     if(case[row,endloc] < case[row,startloc]){
+      # We need to un-merge all cases to point the user
+      # to the case and code which were the problem.
       splits <- split(case, case$fname)
       lens = vector("numeric", length(splits))
       index <- 1
@@ -117,16 +128,25 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
         lens[index] <- nrow(book)
         index <- index + 1
       }
+      # Now that we have the length of each user's case,
+      # we can report the row of that user's codebook which caused the issue
       clens <- cumsum(lens)
       bookrow <- tail(clens[clens<=row], 1)
-      stop(paste("Time range undefined; start ", as.character(case[row,startloc]), " comes after end ", as.character(case[row,endloc]), " in user ", case[row,1], " at row ", as.character(row-bookrow),  sep=""))
+      stop(paste("Time range undefined; start ",
+                 as.character(case[row,startloc]),
+                 " comes after end ",
+                 as.character(case[row,endloc]),
+                 " in user ", case[row,1],
+                 " at row ", as.character(row-bookrow),  sep=""))
     }
-    intv[row] <- lubridate::interval(start=case[row,startloc], end=case[row,endloc], tz='UTC')
+    intv[row] <- lubridate::interval(start=case[row,startloc],
+                                     end=case[row,endloc], tz='UTC')
   }
   case[['interval']] <- intv
 
   # convert code strings to code numbers
-  case[['codeId']] <- lapply(case[[codeloc]], function (x) hash::values(code2num[tolower(trimws(x))]))
+  case[['codeId']] <- lapply(case[[codeloc]],
+                             function (x) hash::values(code2num[tolower(trimws(x))]))
 
   # split out cases by user/filename
   codebooks <- split(case, case$fname)
@@ -244,7 +264,13 @@ all_kappa <- function(codebooks, windowSec=10, startCol=2, endCol=3, codeCol='co
   # initialize kappas
   kappas <- vector("list", length(codebooks))
   for (ref in 1:length(codebooks)){
-    kappas[ref] <- single_kappa(codebooks, ref, windowSec, startCol, endCol, codeCol, intCol)
+    kappas[ref] <- single_kappa(codebooks,
+                                ref,
+                                windowSec,
+                                startCol,
+                                endCol,
+                                codeCol,
+                                intCol)
   }
   return(kappas)
 }

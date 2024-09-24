@@ -8,6 +8,9 @@
 load_from_dir <- function(dirpath=".", pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms") {
 
   files <- list.files(dirpath, pattern=pat)
+  if(length(files) < 1){
+    stop(paste("Could not find file(s) at location: ", dirpath, sep=""))
+  }
   all_data <- data.frame(matrix(ncol=2, nrow=0))
   colnames(all_data) <- c("fname", "codes")
   for (f in files){
