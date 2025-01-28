@@ -1,5 +1,8 @@
-## Global vars
-## These hold data across multiple/all cases loaded
+# Global vars
+# These hold data across multiple/all cases loaded
+
+
+EPOCH <- lubridate::as_datetime(0)
 
 # This hash acts like a lookup to convert codes to unique numerical ID
 # Initialize empty as global, or user can hardcode values like example below.
@@ -31,6 +34,11 @@ replacements <- list("load")
 #                      c("examining", "anatomy"))
 
 
+
+sublist_max <- function(listofarr, pos=1){
+  return( max( unlist( lapply(listofarr, function(x) x[[pos]]) ) ) )
+}
+
 # Reads in a csv with codes (column 1) mapped to unique integers (column 2).
 # Loads data.frame to hash.
 load_codekeys <- function(path=".", delimiter=",", quoteChar="\"", header=FALSE){
@@ -53,9 +61,12 @@ load_replacements <- function(path=".", delimiter=",", quoteChar="\"", header=FA
   return(replacements)
 }
 
+escape_str <- function(string){
+  return(gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\1", string))
+}
 
 
-preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacements.csv", relCodekeyPath="/../codekeys.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
+preprocess_case <- function(caseDirPath=".", relReplacementPath="/../../codereplacements.csv", relCodekeyPath="/../../codeids.csv", startCol=1, endCol=2, codeCol=4, pat="*.csv$", header=FALSE, delimiter=",", quoteChar="\"", colTypes=c("numeric", "numeric", "character", "character"), parseDates=c(T,T,F,F), dateFmt="ms"){
 
   case <- load_from_dir(caseDirPath,
                         pat=pat,
@@ -71,15 +82,20 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   startloc <- colnames(case)[startCol+1]
   endloc <- colnames(case)[endCol+1]
 
+
+
   # Lowercase codestr, trim leading and trailing white space
   case[[codeloc]] <- tolower(trimws(case[[codeloc]]))
+
+  # Remove lines with blank codes
+  case <- case[!(is.na(case[[codeloc]]) | case[[codeloc]]==""),]
 
   # We need a user defined mapping of codes to numbers. If not hardcoded,
   # load it from file
   if (length(code2num) < 1){
     tryCatch({code2num <- load_codekeys(paste(caseDirPath, relCodekeyPath, sep=""))},
              error = function(cond) {
-                warning("Failed to load codekeys.csv.
+                warning("Failed to load codeids.csv.
                         Defaulting to building map from single case.
                         THIS MEANS EACH CASE MAY HAVE DIFFERENT VALUES FOR THE SAME CODE!")
 
@@ -104,7 +120,7 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   # make substitutions if required
   if (length(replacements[[1]]) > 1) {
     for (each in replacements){
-      case[[codeloc]] <- stringr::str_replace(case[[codeloc]], each[1], each[2])
+      case[[codeloc]] <- stringr::str_replace_all(case[[codeloc]], escape_str(each[1]), escape_str(each[2]))
     }
   }
 
@@ -114,8 +130,8 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
 
   # convert start and stop to lubridate interval for overlap checking
   # initialize interval vector to avoid casting interval to numeric (seconds)
-  intv <- rep(lubridate::interval("1970-01-01 00:00:00",
-                                  "1970-01-01 00:00:00"), nrow(case))
+  intv <- rep(lubridate::interval(EPOCH,
+                                  EPOCH), nrow(case))
   # TODO Catch and fix case where time is only in seconds!!
   for (row in 1:nrow(case)){
     if(case[row,endloc] < case[row,startloc]){
@@ -154,6 +170,11 @@ preprocess_case <- function(caseDirPath=".", relReplacementPath="/../replacement
   return(codebooks)
 }
 
+dates_to_seconds <- function(date1, date2=EPOCH){
+  date1 <- lubridate::as_datetime(date1)
+  date2 <- lubridate::as_datetime(date2)
+  return(as.numeric(lubridate::seconds(lubridate::as.duration(abs(date1-date2)))))
+}
 
 stat_mode <- function(data){
   # previously tried this with a hash, but hash::hash does not preserve insert
@@ -255,7 +276,7 @@ single_kappa <- function(codebooks, reference=1, windowSec=10, startCol=2, endCo
     all_results <- cbind(all_results, unlist(results))
   }
 
-  kappa <- irr::kappam.fleiss(all_results)
+  kappa <- irr::kappam.fleiss(all_results, exact=TRUE)
   return(kappa$value)
 
 }
@@ -276,3 +297,137 @@ all_kappa <- function(codebooks, windowSec=10, startCol=2, endCol=3, codeCol='co
 }
 
 
+unzip_nested <- function(series, elems){
+  flat <- unlist(series)
+  len <- length(flat)
+  retval <- vector("list", elems)
+  for (each in 1:elems){
+    retval[[each]] <- flat[seq(each,len,elems)]
+  }
+  return(retval)
+
+}
+
+
+get_overlap_score <- function(series1, series2, duration, resolution, window){
+  # create an array of times to loop over and compare check intervals
+  times <- seq(0, duration+1, resolution)
+  times <- lapply(times, function(x) lubridate::as_datetime(x))
+  series1 <- lapply(series1, function(x) c(lubridate::as_datetime(x[[1]]), lubridate::as_datetime(x[[2]])))
+  series2 <- lapply(series2, function(x) c(lubridate::as_datetime(x[[1]]), lubridate::as_datetime(x[[2]])))
+
+  overlap_scores <- rep(0.0, length(times))
+
+  # Loop over each time window
+  # If in a window where rater1 coded something,
+  #   first check if rater2 also coded something
+  # Then, check if rater2 had any codes within <window>
+  #   distance, and if so, add a decay weight
+  idx <- 1
+  for (t in times){
+    # check if we're in a window coded by reference coder
+    in_series1 <- any(sapply(series1, function(win) win[[1]]<=t & t<win[[2]]))
+    if (!in_series1){
+      next
+    }
+
+    max_score <- 0.0
+    for (intv in series2){
+      if (intv[1]<=t & t<=intv[2]){
+        max_score <- 1.0
+        break
+      } else {
+        dist <- min(dates_to_seconds(t,intv[1]),
+                    dates_to_seconds(t,intv[2])
+                    )
+        if (dist <= window){
+          score <- exp(-dist/(window/2))
+          max_score <- max(score, max_score)
+        }
+      }
+    }
+    overlap_scores[idx] <- max_score
+    idx <- idx + 1
+  }
+
+  # Create a normalization term equivalent to
+  #   the max total time coded from either rater
+  s1p <- sum( sapply( series1, function(x) dates_to_seconds(x[[2]], x[[1]])/resolution ) )
+  s2p <- sum( sapply( series2, function(x) dates_to_seconds(x[[2]], x[[1]])/resolution ) )
+  normalization <- max(s1p, s2p)
+  # Normalized scores will always be bounded [0,1]
+  # Practically, they will be lower bounded by
+  #   the proportion of time rater2 and rater1
+  #   both had codes overlap.
+  total_overlap <- sum(overlap_scores)
+
+  overlap_score <- ifelse(normalization>0, total_overlap/normalization, 0)
+
+  return(c(overlap_score, overlap_scores))
+}
+
+
+eliots_kappa <- function(codebooks, windowSec=10, startCol=2, endCol=3, codeCol='codeId', resolution=5){
+  # format data to pull out start, stop, and codes in concise list
+  N <- length(codebooks)
+  reliability_scores <- matrix(rep(0,N*N), nrow=N, ncol=N)
+  reliability_weight <- matrix(rep(0,N*N), nrow=N, ncol=N)
+  axes <- 1:N
+
+  i <- 1
+  for (ref in 1:N){
+    refbook <- codebooks[[ref]]
+    rest <- codebooks[-ref]
+    ref_len <- nrow(refbook)
+    i_series <- vector("list", ref_len)
+
+    # build i_series for checking temporal overlap
+    for (row in 1:ref_len){
+      start <- refbook[row,startCol]
+      end <- refbook[row,endCol]
+      i_series[[row]]<- c(start,end)
+    }
+
+    off_axes <- axes[-i]
+
+    for (k in off_axes){
+      kappa_i <- single_kappa(list(refbook,codebooks[[k]]),
+                              reference=1,
+                              windowSec=10,
+                              startCol=startCol,
+                              endCol=endCol,
+                              codeCol=codeCol,
+                              intCol='interval')
+
+      reliability_scores[i,k] <- kappa_i
+
+    }
+
+    j <- 1
+    for (otherbook in rest){
+      other_len <- nrow(otherbook)
+      j_series <- vector("list", other_len)
+      for (row in 1:other_len){
+        start <- lubridate::as_datetime(otherbook[row,startCol])
+        end <- lubridate::as_datetime(otherbook[row,endCol])
+        j_series[[row]] <- c(start,end)
+      }
+      maxt <- max(sublist_max(i_series, 2), sublist_max(j_series, 2))
+
+      maxt = dates_to_seconds(maxt, EPOCH)
+      score_bundle <- get_overlap_score(i_series, j_series, maxt, resolution, windowSec)
+      w <- score_bundle[[1]]
+
+      reliability_weight[i,off_axes[j]] <- w
+      j <- j +1
+    }
+
+
+    i <- i + 1
+  }
+
+  print(reliability_scores)
+  print(reliability_weight)
+
+  return(stats::weighted.mean(reliability_scores, reliability_weight))
+}

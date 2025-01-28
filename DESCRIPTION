@@ -13,4 +13,5 @@ Imports:
   lubridate (>= 1.9.3),
   zoo (>= 1.8-12),
   stringr (>=1.5.1),
-  irr (>= 0.84.1)
+  irr (>= 0.84.1),
+  hash (>=2.2.6)
